@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+env/
+venv/
+
+# Environment and secrets
+.env
+
+# Data & Lakehouse storage
+data/raw/*
+data/processed/*
+data/delta/*
+!data/**/.gitkeep
+
+# IDEs
+.vscode/
+.idea/
+
+# Testing & Logs
+.pytest_cache/
+*.log
