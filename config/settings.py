@@ -1,3 +1,5 @@
+# This file sets up workspace paths, raw storage targets, and API endpoints.
+
 import os
 from pathlib import Path
 
