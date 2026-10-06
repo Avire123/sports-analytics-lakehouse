@@ -18,17 +18,12 @@ for path in [RAW_DATA_DIR, PROCESSED_DATA_DIR, DELTA_DATA_DIR]:
 FOOTBALL_DATA_API_KEY = os.getenv("FOOTBALL_DATA_API_KEY", "")
 FOOTBALL_DATA_BASE_URL = "https://api.football-data.org/v4"
 
-# Default League Targets (eg Premier League = PL)
-DEFAULT_COMPETITION = "PL"
-DEFAULT_SEASON = "2023"
-
-# football-data.org area codes for UEFA member associations.
-UEFA_AREA_CODES = frozenset({
-    "ALB", "AND", "ARM", "AUT", "AZE", "BEL", "BIH", "BLR", "BUL",
-    "CRO", "CYP", "CZE", "DEN", "ENG", "ESP", "EST", "FRO", "FIN",
-    "FRA", "GEO", "GER", "GIB", "GRE", "HUN", "IRL", "ISL", "ISR",
-    "ITA", "KAZ", "KOS", "LIE", "LTU", "LUX", "LVA", "MDA", "MKD",
-    "MLT", "MNE", "NED", "NIR", "NOR", "POL", "POR", "ROU", "RUS",
-    "SCO", "SMR", "SRB", "SVK", "SVN", "SWE", "SUI", "TUR", "UKR",
-    "WAL",
-})
+# European competitions available in football-data.org.
+FEATURED_COMPETITIONS = {
+    "PL": "Premier League",
+    "PD": "La Liga",
+    "BL1": "Bundesliga",
+    "SA": "Serie A",
+    "FL1": "Ligue 1",
+    "CL": "UEFA Champions League",
+}

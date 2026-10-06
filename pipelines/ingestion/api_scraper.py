@@ -3,14 +3,15 @@
 
 import json
 import logging
-import re
-import requests
 from pathlib import Path
+
+import requests
+
 from config.settings import (
     FOOTBALL_DATA_BASE_URL,
     FOOTBALL_DATA_API_KEY,
+    FEATURED_COMPETITIONS,
     RAW_DATA_DIR,
-    UEFA_AREA_CODES,
 )
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -34,54 +35,31 @@ class FootballDataIngestor:
             logging.error(f"Failed to fetch match data: {e}")
             return {}
 
-    def fetch_european_competitions(self) -> list[dict]:
-        """Return available catalogued domestic leagues in UEFA member areas."""
-        url = f"{self.base_url}/competitions"
-        logging.info("Fetching available competitions from REST API: %s", url)
+    def fetch_teams(self, competition_code: str) -> dict:
+        """Fetch the participating teams for one competition."""
+        url = f"{self.base_url}/competitions/{competition_code}/teams"
+        logging.info("Fetching teams from REST API: %s", url)
         response = requests.get(url, headers=self.headers, timeout=15)
         response.raise_for_status()
         data = response.json()
 
-        competitions = data.get("competitions")
-        if not isinstance(competitions, list):
-            raise ValueError("Competition catalog response has no competitions list")
-
-        selected = []
-        for competition in competitions:
-            if not isinstance(competition, dict):
-                continue
-
-            code = competition.get("code")
-            area = competition.get("area") or {}
-            is_european_league = (
-                competition.get("type") == "LEAGUE"
-                and isinstance(area, dict)
-                and area.get("code") in UEFA_AREA_CODES
+        if not isinstance(data, dict) or not isinstance(data.get("teams"), list):
+            raise ValueError(
+                f"Team response for {competition_code} has no teams list"
             )
-            if code == "CL" or is_european_league:
-                selected.append(competition)
+        return data
 
-        return selected
-
-    def fetch_european_matches(self) -> dict[str, dict]:
-        """Fetch matches for catalogued European leagues and the Champions League."""
-        competitions = self.fetch_european_competitions()
-        codes = {
-            competition["code"]
-            for competition in competitions
-            if isinstance(competition.get("code"), str)
-            and re.fullmatch(r"[A-Z0-9]{2,8}", competition["code"])
-        }
-        codes.add("CL")
-
+    def fetch_featured_teams(self) -> tuple[dict[str, dict], dict[str, str]]:
+        """Fetch team rosters for the five major leagues and Champions League."""
         payloads = {}
-        for code in sorted(codes):
-            payload = self.fetch_matches(competition_code=code)
-            if payload:
-                payloads[code] = payload
-            else:
-                logging.error("No match data retrieved for competition %s", code)
-        return payloads
+        errors = {}
+        for code in FEATURED_COMPETITIONS:
+            try:
+                payloads[code] = self.fetch_teams(code)
+            except (requests.exceptions.RequestException, ValueError) as exc:
+                errors[code] = str(exc)
+                logging.error("Failed to fetch teams for %s: %s", code, exc)
+        return payloads, errors
 
     def save_raw_json(self, data: dict, filename: str) -> Path:
         """Save raw dictionary payload to data/raw directory."""
@@ -93,7 +71,13 @@ class FootballDataIngestor:
 
 if __name__ == "__main__":
     ingestor = FootballDataIngestor()
-    european_matches = ingestor.fetch_european_matches()
-    for competition_code, matches_payload in european_matches.items():
-        filename = f"raw_{competition_code.lower()}_matches.json"
-        ingestor.save_raw_json(matches_payload, filename)
+    matches_payload = ingestor.fetch_matches()
+    if matches_payload:
+        ingestor.save_raw_json(matches_payload, "raw_pl_matches.json")
+
+    team_payloads, team_errors = ingestor.fetch_featured_teams()
+    for competition_code, teams_payload in team_payloads.items():
+        filename = f"raw_{competition_code.lower()}_teams.json"
+        ingestor.save_raw_json(teams_payload, filename)
+    if team_errors:
+        logging.error("Some competition teams could not be fetched: %s", team_errors)
