@@ -28,14 +28,16 @@ plan.
   leagues and the Champions League.
 - 📈 **Team Performance Trends** — explore a sample cumulative-points chart for
   selected clubs.
-- ⚔️ **Player H2H Comparison** — compare sample player metrics side by side.
+- ⚔️ **Player H2H Comparison** — compare available player profiles from the
+  featured competitions. Squad availability depends on your API plan.
 - 🔮 **Match Predictor** — try a simple match-outcome estimate using adjustable
   team ratings.
 
-> **Data note:** Team and player comparisons and the team-trends chart currently
-> use sample or generated data. European club rosters are fetched from
-> Football-Data.org when you refresh them; the dashboard does not yet calculate
-> league standings from live match results.
+> **Data note:** Player profiles and club rosters are fetched from
+> Football-Data.org when refreshed. The team-trends chart uses illustrative
+> data, and the dashboard does not yet calculate league standings from live
+> match results. Player coverage is limited to the five featured domestic
+> leagues and Champions League, and to squad data made available by your API plan.
 
 ## 🚀 Get started
 
@@ -49,14 +51,15 @@ python -m pip install streamlit pandas plotly numpy requests
 
 ### 2. Configure Football-Data.org access
 
-Set your API key in PowerShell before launching the app:
+Enter your API key in the masked field on the **European Club Teams** page when
+you refresh rosters, or optionally set it in PowerShell before launching:
 
 ```powershell
 $env:FOOTBALL_DATA_API_KEY = "your-api-key"
 ```
 
-This key is needed to download team rosters. Keep it private and do not commit
-it to the repository.
+The key is used to download team rosters and is not saved in the roster files.
+Keep it private and do not commit it to the repository.
 
 ### 3. Launch the dashboard
 
@@ -66,10 +69,11 @@ From the project root, run:
 streamlit run app/main.py
 ```
 
-Open **European Club Teams**, then select **Refresh teams from
-Football-Data.org**. Successfully fetched rosters are saved as competition JSON
-files under `data/raw/` and remain available to the dashboard on later runs.
-Some competitions may not be accessible on every API plan.
+Open **European Club Teams**, enter the key if it is not configured in the
+environment, then select **Refresh teams from Football-Data.org**. Successfully
+fetched rosters are saved as competition JSON files under `data/raw/` and remain
+available to the dashboard on later runs. Some competitions may not be
+accessible on every API plan.
 
 ## 🧱 Project map
 

@@ -47,15 +47,30 @@ def render_european_teams() -> None:
         "Ligue 1, and UEFA Champions League."
     )
 
-    if st.button("Refresh teams from Football-Data.org", type="primary"):
-        if not FOOTBALL_DATA_API_KEY:
+    with st.form("refresh_featured_teams", clear_on_submit=True):
+        api_key = st.text_input(
+            "Football-Data.org API key",
+            type="password",
+            help=(
+                "Used only to fetch the team lists; it is not saved to disk. "
+                "Leave blank to use FOOTBALL_DATA_API_KEY from the environment."
+            ),
+        )
+        refresh_teams = st.form_submit_button(
+            "Refresh teams from Football-Data.org",
+            type="primary",
+        )
+
+    if refresh_teams:
+        api_key = api_key.strip() or FOOTBALL_DATA_API_KEY
+        if not api_key:
             st.error(
-                "Set the FOOTBALL_DATA_API_KEY environment variable and restart "
-                "the app before refreshing."
+                "Enter your Football-Data.org API key above, or set "
+                "FOOTBALL_DATA_API_KEY before starting the app."
             )
         else:
-            ingestor = FootballDataIngestor()
             with st.spinner("Fetching available competition teams..."):
+                ingestor = FootballDataIngestor(api_key=api_key)
                 payloads, errors = ingestor.fetch_featured_teams()
                 for code, payload in payloads.items():
                     ingestor.save_raw_json(payload, f"raw_{code.lower()}_teams.json")
@@ -71,7 +86,7 @@ def render_european_teams() -> None:
         )
         st.info(
             "Team data has not been downloaded for: "
-            f"{missing_names}. Set FOOTBALL_DATA_API_KEY, then select "
+            f"{missing_names}. Enter your API key above and select "
             "'Refresh teams from Football-Data.org'. Access depends on your API plan."
         )
 

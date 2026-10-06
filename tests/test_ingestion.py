@@ -58,6 +58,42 @@ class FootballDataIngestorTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             FootballDataIngestor().fetch_teams("PL")
 
+    @patch("pipelines.ingestion.api_scraper.requests.get")
+    def test_fetch_teams_uses_supplied_api_key(self, get):
+        get.return_value = self.response({"teams": []})
+
+        FootballDataIngestor(api_key="test-token").fetch_teams("PL")
+
+        self.assertEqual(
+            get.call_args.kwargs["headers"],
+            {"X-Auth-Token": "test-token"},
+        )
+
+    @patch("pipelines.ingestion.api_scraper.requests.get")
+    def test_fetch_teams_loads_player_squad_for_each_team(self, get):
+        get.side_effect = [
+            self.response({"teams": [{"id": 1, "name": "Example FC"}]}),
+            self.response({
+                "squad": [{
+                    "name": "Example Player",
+                    "position": "Midfielder",
+                    "nationality": "Example",
+                }]
+            }),
+        ]
+
+        payload = FootballDataIngestor().fetch_teams("PL")
+
+        self.assertEqual(
+            payload["teams"][0]["squad"][0]["name"],
+            "Example Player",
+        )
+        self.assertEqual(get.call_count, 2)
+        self.assertEqual(
+            get.call_args_list[1].args[0],
+            "https://api.football-data.org/v4/teams/1",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

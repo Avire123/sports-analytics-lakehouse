@@ -47,6 +47,32 @@ class FootballDataIngestor:
             raise ValueError(
                 f"Team response for {competition_code} has no teams list"
             )
+
+        squad_errors = []
+        for team in data["teams"]:
+            if not isinstance(team, dict) or isinstance(team.get("id"), bool):
+                continue
+            team_id = team.get("id")
+            if not isinstance(team_id, int) or isinstance(team.get("squad"), list):
+                continue
+
+            team_url = f"{self.base_url}/teams/{team_id}"
+            try:
+                team_response = requests.get(
+                    team_url, headers=self.headers, timeout=15
+                )
+                team_response.raise_for_status()
+                team_details = team_response.json()
+                squad = team_details.get("squad") if isinstance(team_details, dict) else None
+                if isinstance(squad, list):
+                    team["squad"] = squad
+                else:
+                    squad_errors.append(f"{team.get('name', team_id)}: no squad data")
+            except requests.exceptions.RequestException as exc:
+                squad_errors.append(f"{team.get('name', team_id)}: {exc}")
+
+        if squad_errors:
+            data["squad_errors"] = squad_errors
         return data
 
     def fetch_featured_teams(self) -> tuple[dict[str, dict], dict[str, str]]:
@@ -55,7 +81,13 @@ class FootballDataIngestor:
         errors = {}
         for code in FEATURED_COMPETITIONS:
             try:
-                payloads[code] = self.fetch_teams(code)
+                payload = self.fetch_teams(code)
+                payloads[code] = payload
+                if payload.get("squad_errors"):
+                    errors[code] = (
+                        f"Squad details missing for {len(payload['squad_errors'])} "
+                        "team(s): " + "; ".join(payload["squad_errors"])
+                    )
             except (requests.exceptions.RequestException, ValueError) as exc:
                 errors[code] = str(exc)
                 logging.error("Failed to fetch teams for %s: %s", code, exc)
