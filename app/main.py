@@ -31,3 +31,4 @@ elif page == "Player H2H Comparison":
     render_player_comparison()
 elif page == "Match Predictor":
     render_match_predictor()
+    
